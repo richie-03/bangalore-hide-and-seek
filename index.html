@@ -19,6 +19,7 @@
   header { padding: 18px 16px 8px; }
   h1 { margin: 0; font-size: 22px; letter-spacing: 0.2px; }
   .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .banner { background: var(--warn); color: #1d1d1b; padding: 8px 16px; font-size: 13px; font-weight: 600; }
   main { padding: 0 12px 40px; max-width: 720px; margin: 0 auto; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 12px 0; }
   .card h2 { margin: 0 0 10px; font-size: 15px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); }
@@ -29,11 +30,13 @@
   .stat.wide { grid-column: 1 / -1; }
   .phase { font-size: 18px; font-weight: 600; }
   .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .row + .row { margin-top: 8px; }
   button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 10px; padding: 10px 14px; cursor: pointer; }
   button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   button.danger { color: var(--danger); border-color: var(--danger); }
   button:disabled { background: var(--disabled); color: var(--muted); border-color: var(--disabled); cursor: not-allowed; }
-  select { font: inherit; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+  select, input[type=time] { font: inherit; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+  label.chk { display: flex; gap: 8px; align-items: center; font-size: 14px; }
   ul.list { list-style: none; padding: 0; margin: 0; }
   ul.list li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--line); }
   ul.list li:first-child { border-top: 0; }
@@ -57,6 +60,7 @@
 </style>
 </head>
 <body>
+<div class="banner" id="testBanner" hidden>Test mode: one minute of game time is one second. Separate from the real game state. <a href="./">Back to the real board</a>.</div>
 <header>
   <h1>Bangalore Hide and Seek</h1>
   <div class="sub">Game board. State is saved on this phone only. WhatsApp timestamps are the official record.</div>
@@ -73,11 +77,30 @@
     </div>
   </section>
 
+  <section class="card">
+    <h2>Alerts and chat</h2>
+    <div class="row">
+      <button id="btnAlerts">Enable alerts</button>
+      <span class="note" id="alertNote"></span>
+    </div>
+    <div class="row">
+      <label class="chk"><input type="checkbox" id="waToggle"> Open WhatsApp with a ready message after each action</label>
+    </div>
+    <div class="note" style="margin-top:8px">Alerts fire for: Seeker start, blackout end, endgame open, 15 minutes before hard stop, hard stop. They only work while this page is open. Set phone alarms for the times shown above as a backup. On iPhone, add this page to the home screen first.</div>
+  </section>
+
   <section class="card" id="setupCard">
     <h2>Start</h2>
     <div class="row">
       <label for="headStart">Head start</label>
       <select id="headStart"></select>
+    </div>
+    <div class="row">
+      <label for="leftAt">Hider left at</label>
+      <input type="time" id="leftAt">
+      <span class="note">Leave blank for "now". Fill it in to sync a second phone.</span>
+    </div>
+    <div class="row">
       <button class="primary" id="btnLeave">Hider leaves now</button>
     </div>
     <div class="note" style="margin-top:8px">Press this at the moment the Hider walks out the door. Send the head start number to the chat at the same time.</div>
@@ -86,10 +109,14 @@
   <section class="card" id="hiderCard">
     <h2>Hider</h2>
     <div class="row">
+      <button id="btnZone">Zone committed</button>
+      <span class="note" id="zoneNote"></span>
+    </div>
+    <div class="row">
       <button id="btnRelocate">Relocate (20 min blackout)</button>
       <span class="note" id="relocateNote"></span>
     </div>
-    <div class="note" style="margin-top:8px">Once per game. Message RELOCATING in the chat first. Take a new pin screenshot when settled. Never answer a hint from a moving vehicle.</div>
+    <div class="note" style="margin-top:8px">Commit your zone when the Seeker starts: drop a pin in Google Maps, screenshot it with the clock visible, then press Zone committed. Relocate once per game. Never answer a hint from a moving vehicle.</div>
   </section>
 
   <section class="card">
@@ -138,13 +165,16 @@
     <details><summary>Winning</summary>
       <p>Seeker wins when within about 20 m of the Hider and sends a photo of the Hider to the chat. Hider wins if the hard stop (5 hours after the Seeker starts) passes. If the Hider was ever outside the zone or play area, the Hider forfeits.</p>
     </details>
-    <p class="note">Full text: <a href="https://github.com/richie-03/bangalore-hide-and-seek/blob/main/RULES.md">RULES.md</a></p>
+    <p class="note">Full text: <a href="https://github.com/richie-03/bangalore-hide-and-seek/blob/main/RULES.md">RULES.md</a>. Try the board without waiting: <a href="?test=1">test mode</a>.</p>
   </section>
 
   <section class="card">
     <h2>Log</h2>
     <div class="log" id="log"></div>
-    <div class="row" style="margin-top:10px"><button class="danger" id="btnReset">Reset game</button></div>
+    <div class="row" style="margin-top:10px">
+      <button id="btnCopyLog">Copy log</button>
+      <button class="danger" id="btnReset">Reset game</button>
+    </div>
   </section>
 
 </main>
@@ -153,12 +183,14 @@
 <script>
 (function () {
   'use strict';
-  var KEY = 'bhs-state-v1';
-  var MIN = 60000;
+  var TEST = /[?&]test=1/.test(location.search);
+  var KEY = TEST ? 'bhs-state-v1-test' : 'bhs-state-v1';
+  var MIN = TEST ? 1000 : 60000;
   var HARD_STOP_MS = 5 * 60 * MIN;
   var ENDGAME_MS = 3 * 60 * MIN;
   var BLACKOUT_MS = 20 * MIN;
   var HOTCOLD_GAP_MS = 10 * MIN;
+  var WARN_MS = 15 * MIN;
   var MAX_HINTS = 6;
 
   var CHALLENGES = [
@@ -185,15 +217,19 @@
       headStart: 40,
       hiderLeftAt: null,
       relocateAt: null,
+      zones: [],
       challenges: [false, false, false, false, false, false],
       hints: {},
       hotCold: [],
       ended: null,
+      fired: {},
+      wa: true,
       log: []
     };
   }
 
   var state = load();
+  var audioCtx = null;
 
   function load() {
     try {
@@ -224,12 +260,13 @@
     var last = state.hotCold.length ? state.hotCold[state.hotCold.length - 1] : null;
     d.hotColdNextAt = last ? last + HOTCOLD_GAP_MS : null;
     d.hotColdReady = d.endgameOpen && (!d.hotColdNextAt || now >= d.hotColdNextAt);
+    d.zoneOpen = d.phase === 'play' && state.zones.length <= (state.relocateAt ? 1 : 0);
     return d;
   }
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
-  function clock(ts) { var x = new Date(ts); return pad(x.getHours()) + ':' + pad(x.getMinutes()); }
-  function clockS(ts) { var x = new Date(ts); return clock(ts) + ':' + pad(x.getSeconds()); }
+  function clock(ts) { var x = new Date(ts); return pad(x.getHours()) + ':' + pad(x.getMinutes()) + (TEST ? ':' + pad(x.getSeconds()) : ''); }
+  function clockS(ts) { var x = new Date(ts); return pad(x.getHours()) + ':' + pad(x.getMinutes()) + ':' + pad(x.getSeconds()); }
   function countdown(ms) {
     if (ms < 0) ms = 0;
     var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
@@ -237,9 +274,43 @@
   }
   function $(id) { return document.getElementById(id); }
 
+  function beep() {
+    try {
+      if (!audioCtx) return;
+      var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'sine'; o.frequency.value = 880; g.gain.value = 0.2;
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(); o.stop(audioCtx.currentTime + 0.6);
+    } catch (e) {}
+  }
+  function alertUser(key, title, body) {
+    if (state.fired[key]) return;
+    state.fired[key] = Date.now(); save();
+    log('Alert: ' + title);
+    beep();
+    try { if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300]); } catch (e) {}
+    try {
+      if ('Notification' in window && Notification.permission === 'granted') new Notification(title, { body: body });
+    } catch (e) {}
+  }
+  function checkAlerts(now, d) {
+    if (d.phase === 'setup' || d.phase === 'ended') return;
+    if (now >= d.seekerStartAt) alertUser('seekerStart', 'Seeker starts now', 'Hider: commit your zone and press Zone committed.');
+    if (d.blackoutUntil && now >= d.blackoutUntil) alertUser('blackoutEnd', 'Blackout over', 'Hints can be requested again.');
+    if (d.phase === 'play' && d.endgameOpen) alertUser('endgame', 'Endgame open', 'Seeker may ask within 500 m every 10 minutes.');
+    if (now >= d.hardStopAt - WARN_MS && now < d.hardStopAt) alertUser('warn15', '15 minutes to hard stop', 'Hard stop at ' + clock(d.hardStopAt) + '.');
+    if (now >= d.hardStopAt) alertUser('hardStop', 'Hard stop', 'Time is up. Hider wins.');
+  }
+
+  function toChat(text) {
+    if (!state.wa) return;
+    try { window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank'); } catch (e) {}
+  }
+
   function render() {
     var now = Date.now();
     var d = derived(now);
+    checkAlerts(now, d);
 
     var phaseText = { setup: 'Setup', headstart: 'Head start', play: 'Seeking', timeout: 'Time is up, Hider wins', ended: state.ended === 'seeker' ? 'Seeker found the Hider' : 'Seeker conceded, Hider wins' }[d.phase];
     $('phase').textContent = phaseText;
@@ -266,25 +337,34 @@
     }
     $('hintCount').textContent = d.hintsUsed + ' / ' + MAX_HINTS;
 
+    var perm = ('Notification' in window) ? Notification.permission : 'unsupported';
+    $('alertNote').textContent = audioCtx
+      ? (perm === 'granted' ? 'Sound, vibration and notifications on.' : 'Sound and vibration on. Notifications ' + (perm === 'unsupported' ? 'not supported here.' : 'not allowed.'))
+      : 'Tap once so the phone allows sound.';
+    $('waToggle').checked = !!state.wa;
+
     $('setupCard').style.display = d.phase === 'setup' ? '' : 'none';
     $('headStart').value = String(state.headStart);
 
-    var reloc = $('btnRelocate');
-    reloc.disabled = !(d.phase === 'play' && !state.relocateAt);
+    $('btnZone').disabled = !d.zoneOpen;
+    $('zoneNote').textContent = state.zones.length ? 'Committed at ' + state.zones.map(clock).join(', ') + '.' : (d.phase === 'play' ? 'Commit now.' : 'After the Seeker starts.');
+
+    $('btnRelocate').disabled = !(d.phase === 'play' && !state.relocateAt);
     $('relocateNote').textContent = state.relocateAt ? 'Used at ' + clock(state.relocateAt) + '.' : (d.phase === 'play' ? 'Available.' : 'Available once the Seeker starts.');
 
     var ul = $('challenges'); ul.innerHTML = '';
     var nextIdx = state.challenges.indexOf(false);
+    var lastDone = nextIdx === -1 ? CHALLENGES.length - 1 : nextIdx - 1;
     CHALLENGES.forEach(function (txt, i) {
       var li = document.createElement('li');
       var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = state.challenges[i];
-      var lastDone = nextIdx === -1 ? CHALLENGES.length - 1 : nextIdx - 1;
       cb.disabled = d.phase !== 'play'
         || (!state.challenges[i] && i !== nextIdx)
         || (state.challenges[i] && (i !== lastDone || d.hintsUsed >= d.challengesDone));
       cb.addEventListener('change', function () {
         state.challenges[i] = cb.checked;
         log((cb.checked ? 'Challenge ' : 'Unchecked challenge ') + (i + 1));
+        if (cb.checked) toChat('Challenge ' + (i + 1) + ' done at ' + clock(Date.now()) + '. Proof photo follows. One hint earned.');
         render();
       });
       var div = document.createElement('div');
@@ -307,16 +387,17 @@
       b.innerHTML = '<span class="k">' + h[0] + '</span><span class="txt">' + h[1] + (used ? ' <span class="note">(asked ' + clock(used) + ')</span>' : '') + '</span>';
       b.disabled = !!used || d.phase !== 'play' || d.inBlackout || d.hintsEarned <= 0 || d.hintsUsed >= MAX_HINTS;
       b.addEventListener('click', function () {
-        if (!confirm('Ask hint ' + h[0] + '? Send it in the chat now.')) return;
-        state.hints[h[0]] = Date.now();
+        if (!confirm('Ask hint ' + h[0] + '? It will be marked used.')) return;
+        var t = Date.now();
+        state.hints[h[0]] = t;
         log('Hint ' + h[0] + ' asked');
+        toChat('HINT ' + h[0] + ' requested at ' + clock(t) + ': ' + h[1] + ' (answer within 5 minutes)');
         render();
       });
       hd.appendChild(b);
     });
 
-    var hc = $('btnHotCold');
-    hc.disabled = !d.hotColdReady;
+    $('btnHotCold').disabled = !d.hotColdReady;
     var hcn = '';
     if (d.phase !== 'play') hcn = '';
     else if (!d.endgameOpen) hcn = 'Locked until ' + clock(d.endgameAt) + ' or six hints.';
@@ -329,32 +410,65 @@
 
     var lg = $('log'); lg.innerHTML = '';
     if (!state.log.length) lg.innerHTML = '<div class="note">Nothing yet.</div>';
-    state.log.slice(0, 60).forEach(function (e) {
+    state.log.slice(0, 80).forEach(function (e) {
       var row = document.createElement('div');
       row.innerHTML = '<time>' + clockS(e.t) + '</time>' + e.m;
       lg.appendChild(row);
     });
   }
 
+  if (TEST) $('testBanner').hidden = false;
+
   var sel = $('headStart');
-  for (var m = 30; m <= 45; m += 5) { var o = document.createElement('option'); o.value = m; o.textContent = m + ' minutes'; sel.appendChild(o); }
+  for (var m = 30; m <= 45; m += 5) { var o = document.createElement('option'); o.value = m; o.textContent = m + (TEST ? ' seconds' : ' minutes'); sel.appendChild(o); }
   sel.addEventListener('change', function () { state.headStart = parseInt(sel.value, 10); save(); render(); });
 
+  $('waToggle').addEventListener('change', function () { state.wa = $('waToggle').checked; save(); });
+
+  $('btnAlerts').addEventListener('click', function () {
+    try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); beep(); } catch (e) {}
+    try { if (navigator.vibrate) navigator.vibrate(200); } catch (e) {}
+    try {
+      if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().then(render);
+    } catch (e) {}
+    render();
+  });
+
   $('btnLeave').addEventListener('click', function () {
-    if (!confirm('Start the head start clock now with ' + state.headStart + ' minutes?')) return;
-    state.hiderLeftAt = Date.now();
-    log('Hider left. Head start ' + state.headStart + ' min. Seeker starts at ' + clock(state.hiderLeftAt + state.headStart * MIN) + '.');
+    var t = Date.now();
+    var manual = $('leftAt').value;
+    if (manual && !TEST) {
+      var p = manual.split(':'); var x = new Date(); x.setHours(parseInt(p[0], 10), parseInt(p[1], 10), 0, 0); t = x.getTime();
+      if (t > Date.now()) { alert('That time is in the future. Use the time the Hider actually left.'); return; }
+    }
+    if (!confirm('Start the clock with a ' + state.headStart + (TEST ? ' second' : ' minute') + ' head start' + (manual && !TEST ? ' from ' + manual : ' from now') + '?')) return;
+    state.hiderLeftAt = t;
+    var ss = t + state.headStart * MIN;
+    log('Hider left at ' + clock(t) + '. Head start ' + state.headStart + '. Seeker starts at ' + clock(ss) + '.');
+    toChat('Hider leaving at ' + clock(t) + '. Head start ' + state.headStart + ' min. Seeker starts at ' + clock(ss) + '. Hard stop ' + clock(ss + HARD_STOP_MS) + '.');
+    render();
+  });
+  $('btnZone').addEventListener('click', function () {
+    if (!confirm('Zone committed? Take the pin screenshot first.')) return;
+    var t = Date.now();
+    state.zones.push(t);
+    log('Zone committed');
+    toChat('Zone committed at ' + clock(t) + '. Pin screenshot taken.');
     render();
   });
   $('btnRelocate').addEventListener('click', function () {
-    if (!confirm('Use Relocate now? Message RELOCATING in the chat first.')) return;
-    state.relocateAt = Date.now();
-    log('Relocate used. Blackout until ' + clock(state.relocateAt + BLACKOUT_MS) + '.');
+    if (!confirm('Use Relocate now? Blackout for 20 minutes, then commit a new zone.')) return;
+    var t = Date.now();
+    state.relocateAt = t;
+    log('Relocate used. Blackout until ' + clock(t + BLACKOUT_MS) + '.');
+    toChat('RELOCATING at ' + clock(t) + '. No hints until ' + clock(t + BLACKOUT_MS) + '.');
     render();
   });
   $('btnHotCold').addEventListener('click', function () {
-    state.hotCold.push(Date.now());
+    var t = Date.now();
+    state.hotCold.push(t);
     log('Hot or cold asked (within 500 m?)');
+    toChat('Within 500 m of you? Asked at ' + clock(t) + '. Yes or no.');
     render();
   });
   $('btnFound').addEventListener('click', function () {
@@ -364,6 +478,15 @@
   $('btnConcede').addEventListener('click', function () {
     if (!confirm('Seeker concedes. Hider wins. Confirm?')) return;
     state.ended = 'hider'; log('Seeker conceded. Hider wins.'); render();
+  });
+  $('btnCopyLog').addEventListener('click', function () {
+    var text = state.log.slice().reverse().map(function (e) { return clockS(e.t) + ' ' + e.m; }).join('\n');
+    if (!text) { alert('Log is empty.'); return; }
+    function fallback() { window.prompt('Copy the log:', text); }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { alert('Log copied.'); }, fallback);
+      else fallback();
+    } catch (e) { fallback(); }
   });
   $('btnReset').addEventListener('click', function () {
     if (!confirm('Reset everything on this phone? This cannot be undone.')) return;

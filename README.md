@@ -7,6 +7,10 @@ A two-player, Jet Lag style hide and seek game played across central and south B
 
 The game board is a single static page. It keeps timers, the challenge list, the hint menu and an event log in the browser's local storage, so each player's phone holds its own copy. The WhatsApp chat remains the official record for timestamps and photos.
 
+## Trying it without waiting
+
+Open the board with `?test=1` appended to the URL. Every minute of game time becomes one second, and the test state is kept separately from the real game.
+
 ## Running locally
 
 Open `index.html` in a browser, or serve the folder:
