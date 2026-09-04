@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bangalore Hide and Seek</title>
+<style>
+  :root {
+    --bg: #f5f3ee; --card: #ffffff; --ink: #1d1d1b; --muted: #6b6b66; --line: #e2dfd6;
+    --accent: #b5482b; --accent-ink: #ffffff; --ok: #2f7d4f; --warn: #b8860b; --danger: #9b2c2c;
+    --disabled: #d8d5cc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #17171a; --card: #222226; --ink: #ecebe6; --muted: #a09f98; --line: #34343a;
+      --accent: #e0664a; --ok: #5cb27e; --warn: #d9a83a; --danger: #d86a6a; --disabled: #3a3a40; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 18px 16px 8px; }
+  h1 { margin: 0; font-size: 22px; letter-spacing: 0.2px; }
+  .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  main { padding: 0 12px 40px; max-width: 720px; margin: 0 auto; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 12px 0; }
+  .card h2 { margin: 0 0 10px; font-size: 15px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); }
+  .status { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat { padding: 10px; border: 1px solid var(--line); border-radius: 10px; }
+  .stat .lbl { font-size: 12px; color: var(--muted); }
+  .stat .val { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .stat.wide { grid-column: 1 / -1; }
+  .phase { font-size: 18px; font-weight: 600; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 10px; padding: 10px 14px; cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button.danger { color: var(--danger); border-color: var(--danger); }
+  button:disabled { background: var(--disabled); color: var(--muted); border-color: var(--disabled); cursor: not-allowed; }
+  select { font: inherit; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+  ul.list { list-style: none; padding: 0; margin: 0; }
+  ul.list li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--line); }
+  ul.list li:first-child { border-top: 0; }
+  ul.list input[type=checkbox] { width: 20px; height: 20px; margin-top: 3px; flex: none; }
+  .k { font-weight: 600; margin-right: 6px; }
+  .next { color: var(--accent); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; }
+  .done { color: var(--muted); text-decoration: line-through; }
+  .hint { width: 100%; text-align: left; padding: 10px 12px; margin: 6px 0; display: flex; gap: 10px; align-items: flex-start; }
+  .hint .k { min-width: 18px; }
+  .hint.used { background: var(--disabled); color: var(--muted); border-color: var(--disabled); }
+  .hint.used .txt { text-decoration: line-through; }
+  .note { color: var(--muted); font-size: 13px; }
+  .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--danger); }
+  details { margin: 8px 0; } summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
+  .log { font-size: 13px; font-variant-numeric: tabular-nums; }
+  .log div { padding: 4px 0; border-top: 1px dashed var(--line); }
+  .log div:first-child { border-top: 0; }
+  .log time { color: var(--muted); margin-right: 8px; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px 0; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Bangalore Hide and Seek</h1>
+  <div class="sub">Game board. State is saved on this phone only. WhatsApp timestamps are the official record.</div>
+</header>
+<main>
+
+  <section class="card" id="statusCard">
+    <div class="status">
+      <div class="stat wide"><div class="lbl">Phase</div><div class="phase" id="phase">Setup</div><div class="note" id="phaseNote"></div></div>
+      <div class="stat"><div class="lbl" id="t1l">Head start</div><div class="val" id="t1">--:--</div></div>
+      <div class="stat"><div class="lbl" id="t2l">Hard stop</div><div class="val" id="t2">--:--</div></div>
+      <div class="stat"><div class="lbl">Seeker starts</div><div class="val" id="seekerStart">--:--</div></div>
+      <div class="stat"><div class="lbl">Hints used</div><div class="val" id="hintCount">0 / 6</div></div>
+    </div>
+  </section>
+
+  <section class="card" id="setupCard">
+    <h2>Start</h2>
+    <div class="row">
+      <label for="headStart">Head start</label>
+      <select id="headStart"></select>
+      <button class="primary" id="btnLeave">Hider leaves now</button>
+    </div>
+    <div class="note" style="margin-top:8px">Press this at the moment the Hider walks out the door. Send the head start number to the chat at the same time.</div>
+  </section>
+
+  <section class="card" id="hiderCard">
+    <h2>Hider</h2>
+    <div class="row">
+      <button id="btnRelocate">Relocate (20 min blackout)</button>
+      <span class="note" id="relocateNote"></span>
+    </div>
+    <div class="note" style="margin-top:8px">Once per game. Message RELOCATING in the chat first. Take a new pin screenshot when settled. Never answer a hint from a moving vehicle.</div>
+  </section>
+
+  <section class="card">
+    <h2>Challenges (in order)</h2>
+    <ul class="list" id="challenges"></ul>
+  </section>
+
+  <section class="card">
+    <h2>Hints (Seeker picks, max 6)</h2>
+    <div class="note" id="hintNote"></div>
+    <div id="hints"></div>
+  </section>
+
+  <section class="card">
+    <h2>Endgame</h2>
+    <div class="row">
+      <button id="btnHotCold">Ask: within 500 m?</button>
+      <span class="note" id="hotColdNote"></span>
+    </div>
+    <div class="note" style="margin-top:8px">Unlocks when all six hints are used or 3 hours after the Seeker starts. Once every 10 minutes. Hider answers yes or no.</div>
+  </section>
+
+  <section class="card">
+    <h2>Finish</h2>
+    <div class="row">
+      <button class="primary" id="btnFound">Seeker found the Hider</button>
+      <button id="btnConcede">Seeker concedes</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Rules</h2>
+    <details><summary>Play area</summary>
+      <p>The Hider must be inside one of these at all times: Cubbon Park, MG Road / Church Street / CBD, Ulsoor, Shanti Nagar, Richmond Town, Domlur, Indiranagar (up to 100 Feet Road), Koramangala (all blocks), Jayanagar (all blocks), Basavanagudi, Lalbagh. If it is not on the list, it is out.</p>
+      <p>Transport for both players: walking, metro, buses, autos, cabs. No personal vehicle.</p>
+    </details>
+    <details><summary>Hider</summary>
+      <p>Free movement during the head start. When the Seeker starts, commit to a zone of about 400 m around a point: drop a pin in Google Maps and screenshot it with the clock visible. Wander inside the zone, never leave it.</p>
+      <p>Zone: not within 750 m of home, public and free-entry only, no private homes, no bathrooms, no floors above ground level. Must be findable by someone walking the zone.</p>
+      <p>Every answer is true for where you stand at the moment of the request. Photos are taken then, unedited, and must show the street. Answer within 5 minutes.</p>
+      <p>Seeker challenge proof photos go to the Hider. That is deliberate.</p>
+    </details>
+    <details><summary>Seeker</summary>
+      <p>One hint per completed challenge. Challenges in order, done wherever you are, proof by photo in the chat. Six hints maximum, any order from the menu.</p>
+    </details>
+    <details><summary>Winning</summary>
+      <p>Seeker wins when within about 20 m of the Hider and sends a photo of the Hider to the chat. Hider wins if the hard stop (5 hours after the Seeker starts) passes. If the Hider was ever outside the zone or play area, the Hider forfeits.</p>
+    </details>
+    <p class="note">Full text: <a href="https://github.com/richie-03/bangalore-hide-and-seek/blob/main/RULES.md">RULES.md</a></p>
+  </section>
+
+  <section class="card">
+    <h2>Log</h2>
+    <div class="log" id="log"></div>
+    <div class="row" style="margin-top:10px"><button class="danger" id="btnReset">Reset game</button></div>
+  </section>
+
+</main>
+<footer>V1. Rebalance after the game, not during it.</footer>
+
+<script>
+(function () {
+  'use strict';
+  var KEY = 'bhs-state-v1';
+  var MIN = 60000;
+  var HARD_STOP_MS = 5 * 60 * MIN;
+  var ENDGAME_MS = 3 * 60 * MIN;
+  var BLACKOUT_MS = 20 * MIN;
+  var HOTCOLD_GAP_MS = 10 * MIN;
+  var MAX_HINTS = 6;
+
+  var CHALLENGES = [
+    'Signs. Photograph three signboards on one street in three different scripts (Kannada, English and any third).',
+    'Food. In a cafe or darshini you have never visited, ask what their most popular item is. Photo of the item or menu board.',
+    'Street buy. Buy something under Rs 50 from a street vendor or pushcart. Photo of it in hand.',
+    'Never noticed. Photo with a statue, temple gopuram or old building you have never paid attention to before.',
+    'Choice, pick one. (a) Book cover from a footpath book stall. (b) Auto with a slogan painted on the back. (c) A local writes the neighbourhood name in Kannada on paper.',
+    'Metro. Photo from inside any metro station on the platform with the station name visible.'
+  ];
+  var HINTS = [
+    ['A', 'Closer to Richmond Circle or to Jayanagar 4th Block bus stand?'],
+    ['B', 'Closer to MG Road metro station or to Sony World signal, Koramangala?'],
+    ['C', 'Within 500 m of a metro station? Yes or no.'],
+    ['D', 'Within 300 m of a park, lake or playground? Yes or no.'],
+    ['E', 'Photo looking down the road from where you stand, one direction, road included.'],
+    ['F', 'Photo of the nearest shop sign or building name that is readable.'],
+    ['G', 'Which neighbourhood from the play-area list are you in?'],
+    ['H', 'Distance from Richmond Circle as a band: under 2 km, 2 to 4 km, or over 4 km.']
+  ];
+
+  function fresh() {
+    return {
+      headStart: 40,
+      hiderLeftAt: null,
+      relocateAt: null,
+      challenges: [false, false, false, false, false, false],
+      hints: {},
+      hotCold: [],
+      ended: null,
+      log: []
+    };
+  }
+
+  var state = load();
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) { var s = JSON.parse(raw); return Object.assign(fresh(), s); }
+    } catch (e) {}
+    return fresh();
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  function log(msg) { state.log.unshift({ t: Date.now(), m: msg }); save(); }
+
+  function derived(now) {
+    var d = {};
+    d.seekerStartAt = state.hiderLeftAt ? state.hiderLeftAt + state.headStart * MIN : null;
+    d.hardStopAt = d.seekerStartAt ? d.seekerStartAt + HARD_STOP_MS : null;
+    d.endgameAt = d.seekerStartAt ? d.seekerStartAt + ENDGAME_MS : null;
+    d.hintsUsed = Object.keys(state.hints).length;
+    d.blackoutUntil = state.relocateAt ? state.relocateAt + BLACKOUT_MS : null;
+    d.inBlackout = d.blackoutUntil !== null && now < d.blackoutUntil;
+    d.challengesDone = state.challenges.filter(Boolean).length;
+    d.hintsEarned = d.challengesDone - d.hintsUsed;
+    if (state.ended) d.phase = 'ended';
+    else if (!state.hiderLeftAt) d.phase = 'setup';
+    else if (now < d.seekerStartAt) d.phase = 'headstart';
+    else if (now >= d.hardStopAt) d.phase = 'timeout';
+    else d.phase = 'play';
+    d.endgameOpen = d.phase === 'play' && (d.hintsUsed >= MAX_HINTS || now >= d.endgameAt);
+    var last = state.hotCold.length ? state.hotCold[state.hotCold.length - 1] : null;
+    d.hotColdNextAt = last ? last + HOTCOLD_GAP_MS : null;
+    d.hotColdReady = d.endgameOpen && (!d.hotColdNextAt || now >= d.hotColdNextAt);
+    return d;
+  }
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function clock(ts) { var x = new Date(ts); return pad(x.getHours()) + ':' + pad(x.getMinutes()); }
+  function clockS(ts) { var x = new Date(ts); return clock(ts) + ':' + pad(x.getSeconds()); }
+  function countdown(ms) {
+    if (ms < 0) ms = 0;
+    var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
+    return h > 0 ? h + ':' + pad(m) + ':' + pad(r) : pad(m) + ':' + pad(r);
+  }
+  function $(id) { return document.getElementById(id); }
+
+  function render() {
+    var now = Date.now();
+    var d = derived(now);
+
+    var phaseText = { setup: 'Setup', headstart: 'Head start', play: 'Seeking', timeout: 'Time is up, Hider wins', ended: state.ended === 'seeker' ? 'Seeker found the Hider' : 'Seeker conceded, Hider wins' }[d.phase];
+    $('phase').textContent = phaseText;
+    var note = '';
+    if (d.phase === 'headstart') note = 'Hider moves freely. Seeker waits at Adugodi.';
+    if (d.phase === 'play' && d.inBlackout) note = 'Relocate blackout. No hints until ' + clock(d.blackoutUntil) + '.';
+    else if (d.phase === 'play' && d.endgameOpen) note = 'Endgame open. Hot or cold every 10 minutes.';
+    else if (d.phase === 'play') note = 'Hider is committed to a zone. Endgame opens at ' + clock(d.endgameAt) + ' or after six hints.';
+    $('phaseNote').textContent = note;
+
+    if (d.phase === 'setup') {
+      $('t1l').textContent = 'Head start'; $('t1').textContent = state.headStart + ' min';
+      $('t2l').textContent = 'Hard stop'; $('t2').textContent = '--:--';
+      $('seekerStart').textContent = '--:--';
+    } else if (d.phase === 'headstart') {
+      $('t1l').textContent = 'Seeker starts in'; $('t1').textContent = countdown(d.seekerStartAt - now);
+      $('t2l').textContent = 'Hard stop'; $('t2').textContent = clock(d.hardStopAt);
+      $('seekerStart').textContent = clock(d.seekerStartAt);
+    } else {
+      $('t1l').textContent = d.inBlackout ? 'Blackout ends in' : 'Elapsed';
+      $('t1').textContent = d.inBlackout ? countdown(d.blackoutUntil - now) : countdown(now - d.seekerStartAt);
+      $('t2l').textContent = 'Hard stop in'; $('t2').textContent = countdown(d.hardStopAt - now) + ' (' + clock(d.hardStopAt) + ')';
+      $('seekerStart').textContent = clock(d.seekerStartAt);
+    }
+    $('hintCount').textContent = d.hintsUsed + ' / ' + MAX_HINTS;
+
+    $('setupCard').style.display = d.phase === 'setup' ? '' : 'none';
+    $('headStart').value = String(state.headStart);
+
+    var reloc = $('btnRelocate');
+    reloc.disabled = !(d.phase === 'play' && !state.relocateAt);
+    $('relocateNote').textContent = state.relocateAt ? 'Used at ' + clock(state.relocateAt) + '.' : (d.phase === 'play' ? 'Available.' : 'Available once the Seeker starts.');
+
+    var ul = $('challenges'); ul.innerHTML = '';
+    var nextIdx = state.challenges.indexOf(false);
+    CHALLENGES.forEach(function (txt, i) {
+      var li = document.createElement('li');
+      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = state.challenges[i];
+      var lastDone = nextIdx === -1 ? CHALLENGES.length - 1 : nextIdx - 1;
+      cb.disabled = d.phase !== 'play'
+        || (!state.challenges[i] && i !== nextIdx)
+        || (state.challenges[i] && (i !== lastDone || d.hintsUsed >= d.challengesDone));
+      cb.addEventListener('change', function () {
+        state.challenges[i] = cb.checked;
+        log((cb.checked ? 'Challenge ' : 'Unchecked challenge ') + (i + 1));
+        render();
+      });
+      var div = document.createElement('div');
+      div.innerHTML = '<span class="k">' + (i + 1) + '.</span><span class="' + (state.challenges[i] ? 'done' : '') + '">' + txt + '</span>' + (i === nextIdx && d.phase === 'play' ? ' <span class="next">next</span>' : '');
+      li.appendChild(cb); li.appendChild(div); ul.appendChild(li);
+    });
+
+    var hn = $('hintNote');
+    if (d.phase !== 'play') hn.textContent = 'Hints unlock once the Seeker starts.';
+    else if (d.inBlackout) hn.innerHTML = '<span class="warn">Blackout. No hint requests until ' + clock(d.blackoutUntil) + '.</span>';
+    else if (d.hintsUsed >= MAX_HINTS) hn.textContent = 'All six hints used.';
+    else if (d.hintsEarned > 0) hn.innerHTML = '<span class="ok">' + d.hintsEarned + ' hint' + (d.hintsEarned > 1 ? 's' : '') + ' earned and not yet used. Pick one.</span>';
+    else hn.textContent = 'Complete the next challenge to earn a hint.';
+
+    var hd = $('hints'); hd.innerHTML = '';
+    HINTS.forEach(function (h) {
+      var b = document.createElement('button');
+      var used = state.hints[h[0]];
+      b.className = 'hint' + (used ? ' used' : '');
+      b.innerHTML = '<span class="k">' + h[0] + '</span><span class="txt">' + h[1] + (used ? ' <span class="note">(asked ' + clock(used) + ')</span>' : '') + '</span>';
+      b.disabled = !!used || d.phase !== 'play' || d.inBlackout || d.hintsEarned <= 0 || d.hintsUsed >= MAX_HINTS;
+      b.addEventListener('click', function () {
+        if (!confirm('Ask hint ' + h[0] + '? Send it in the chat now.')) return;
+        state.hints[h[0]] = Date.now();
+        log('Hint ' + h[0] + ' asked');
+        render();
+      });
+      hd.appendChild(b);
+    });
+
+    var hc = $('btnHotCold');
+    hc.disabled = !d.hotColdReady;
+    var hcn = '';
+    if (d.phase !== 'play') hcn = '';
+    else if (!d.endgameOpen) hcn = 'Locked until ' + clock(d.endgameAt) + ' or six hints.';
+    else if (!d.hotColdReady) hcn = 'Next ask at ' + clock(d.hotColdNextAt) + '.';
+    else hcn = 'Ready. ' + state.hotCold.length + ' asked so far.';
+    $('hotColdNote').textContent = hcn;
+
+    $('btnFound').disabled = d.phase !== 'play';
+    $('btnConcede').disabled = d.phase !== 'play';
+
+    var lg = $('log'); lg.innerHTML = '';
+    if (!state.log.length) lg.innerHTML = '<div class="note">Nothing yet.</div>';
+    state.log.slice(0, 60).forEach(function (e) {
+      var row = document.createElement('div');
+      row.innerHTML = '<time>' + clockS(e.t) + '</time>' + e.m;
+      lg.appendChild(row);
+    });
+  }
+
+  var sel = $('headStart');
+  for (var m = 30; m <= 45; m += 5) { var o = document.createElement('option'); o.value = m; o.textContent = m + ' minutes'; sel.appendChild(o); }
+  sel.addEventListener('change', function () { state.headStart = parseInt(sel.value, 10); save(); render(); });
+
+  $('btnLeave').addEventListener('click', function () {
+    if (!confirm('Start the head start clock now with ' + state.headStart + ' minutes?')) return;
+    state.hiderLeftAt = Date.now();
+    log('Hider left. Head start ' + state.headStart + ' min. Seeker starts at ' + clock(state.hiderLeftAt + state.headStart * MIN) + '.');
+    render();
+  });
+  $('btnRelocate').addEventListener('click', function () {
+    if (!confirm('Use Relocate now? Message RELOCATING in the chat first.')) return;
+    state.relocateAt = Date.now();
+    log('Relocate used. Blackout until ' + clock(state.relocateAt + BLACKOUT_MS) + '.');
+    render();
+  });
+  $('btnHotCold').addEventListener('click', function () {
+    state.hotCold.push(Date.now());
+    log('Hot or cold asked (within 500 m?)');
+    render();
+  });
+  $('btnFound').addEventListener('click', function () {
+    if (!confirm('Seeker found the Hider? Photo must be in the chat.')) return;
+    state.ended = 'seeker'; log('Seeker found the Hider. Seeker wins.'); render();
+  });
+  $('btnConcede').addEventListener('click', function () {
+    if (!confirm('Seeker concedes. Hider wins. Confirm?')) return;
+    state.ended = 'hider'; log('Seeker conceded. Hider wins.'); render();
+  });
+  $('btnReset').addEventListener('click', function () {
+    if (!confirm('Reset everything on this phone? This cannot be undone.')) return;
+    state = fresh(); save(); render();
+  });
+
+  render();
+  setInterval(render, 1000);
+})();
+</script>
+</body>
+</html>
