@@ -116,7 +116,7 @@
       <button id="btnRelocate">Relocate (20 min blackout)</button>
       <span class="note" id="relocateNote"></span>
     </div>
-    <div class="note" style="margin-top:8px">Commit your zone when the Seeker starts: drop a pin in Google Maps, screenshot it with the clock visible, then press Zone committed. Relocate once per game. Never answer a hint from a moving vehicle.</div>
+    <div class="note" style="margin-top:8px">Commit your zone when the Seeker starts: drop a pin in Google Maps, screenshot it with the clock visible, then press Zone committed. Relocate once per game, only before the endgame opens. Earlier hint answers are not refunded to the Seeker but may now be stale. Never answer a hint from a moving vehicle.</div>
   </section>
 
   <section class="card">
@@ -136,7 +136,7 @@
       <button id="btnHotCold">Ask: within 500 m?</button>
       <span class="note" id="hotColdNote"></span>
     </div>
-    <div class="note" style="margin-top:8px">Unlocks when all six hints are used or 3 hours after the Seeker starts. Once every 10 minutes. Hider answers yes or no.</div>
+    <div class="note" style="margin-top:8px">Unlocks when all six hints are used or 3 hours after the Seeker starts. Once every 10 minutes. Seeker sends a one-time WhatsApp location pin with the ask. Hider measures straight-line distance to the pin in Google Maps and answers yes (500 m or less) or no.</div>
   </section>
 
   <section class="card">
@@ -165,6 +165,9 @@
     <details><summary>Winning</summary>
       <p>Seeker wins when within about 20 m of the Hider and sends a photo of the Hider to the chat. Hider wins if the hard stop (5 hours after the Seeker starts) passes. If the Hider was ever outside the zone or play area, the Hider forfeits.</p>
     </details>
+    <details><summary>Endgame ask</summary>
+      <p>Seeker attaches a one-time WhatsApp location (not live, not an area name) with the ask. Hider opens the pin in Google Maps, long-presses their own position, uses Measure distance, and answers YES if 500 m or less, else NO, within 5 minutes. The answer is about the pin. The Hider may not shift position to change the answer.</p>
+    </details>
     <p class="note">Full text: <a href="https://github.com/richie-03/bangalore-hide-and-seek/blob/main/RULES.md">RULES.md</a>. Try the board without waiting: <a href="?test=1">test mode</a>.</p>
   </section>
 
@@ -178,7 +181,7 @@
   </section>
 
 </main>
-<footer>V1. Rebalance after the game, not during it.</footer>
+<footer>V1.1. Rebalance after the game, not during it.</footer>
 
 <script>
 (function () {
@@ -205,7 +208,7 @@
     ['A', 'Closer to Richmond Circle or to Jayanagar 4th Block bus stand?'],
     ['B', 'Closer to MG Road metro station or to Sony World signal, Koramangala?'],
     ['C', 'Within 500 m of a metro station? Yes or no.'],
-    ['D', 'Within 300 m of a park, lake or playground? Yes or no.'],
+    ['D', 'Which metro station is nearest to you, by name? Straight-line distance, any line.'],
     ['E', 'Photo looking down the road from where you stand, one direction, road included.'],
     ['F', 'Photo of the nearest shop sign or building name that is readable.'],
     ['G', 'Which neighbourhood from the play-area list are you in?'],
@@ -349,8 +352,8 @@
     $('btnZone').disabled = !d.zoneOpen;
     $('zoneNote').textContent = state.zones.length ? 'Committed at ' + state.zones.map(clock).join(', ') + '.' : (d.phase === 'play' ? 'Commit now.' : 'After the Seeker starts.');
 
-    $('btnRelocate').disabled = !(d.phase === 'play' && !state.relocateAt);
-    $('relocateNote').textContent = state.relocateAt ? 'Used at ' + clock(state.relocateAt) + '.' : (d.phase === 'play' ? 'Available.' : 'Available once the Seeker starts.');
+    $('btnRelocate').disabled = !(d.phase === 'play' && !state.relocateAt && !d.endgameOpen);
+    $('relocateNote').textContent = state.relocateAt ? 'Used at ' + clock(state.relocateAt) + '.' : (d.phase === 'play' ? (d.endgameOpen ? 'Not allowed after the endgame opens.' : 'Available until the endgame opens.') : 'Available once the Seeker starts.');
 
     var ul = $('challenges'); ul.innerHTML = '';
     var nextIdx = state.challenges.indexOf(false);
@@ -468,7 +471,7 @@
     var t = Date.now();
     state.hotCold.push(t);
     log('Hot or cold asked (within 500 m?)');
-    toChat('Within 500 m of you? Asked at ' + clock(t) + '. Yes or no.');
+    toChat('Within 500 m of you? Asked at ' + clock(t) + '. My location pin follows. Measure straight-line distance to the pin, answer yes or no.');
     render();
   });
   $('btnFound').addEventListener('click', function () {

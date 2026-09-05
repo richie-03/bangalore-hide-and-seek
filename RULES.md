@@ -1,4 +1,4 @@
-# Bangalore Hide and Seek - Rules V1
+# Bangalore Hide and Seek - Rules V1.1
 
 Two players. One Hider, one Seeker. The Hider starts from Richmond Town, the Seeker starts from Adugodi. The game is played across central and south Bangalore with Richmond Circle as the rough centre.
 
@@ -15,7 +15,8 @@ Two players. One Hider, one Seeker. The Hider starts from Richmond Town, the See
 - Head start: move freely anywhere in the play area.
 - When the Seeker starts, the Hider commits to a hiding zone: a circle of about 400 m around a point. Drop a pin in Google Maps, screenshot it with the clock visible, and keep it to show at the end. The Hider may wander inside the zone but may not leave it.
 - Zone restrictions: not within 750 m of the Hider's home. Public, free-entry places only. No private homes, no bathrooms, no floors above ground level. The Hider must be findable by someone who walks the zone.
-- Relocate, once per game. The Hider messages RELOCATING. For the next 20 minutes the Seeker cannot request hints. The Hider may move to a new zone anywhere in the play area, then takes a new pin screenshot. The Hider never answers a hint while in a moving vehicle.
+- Relocate, once per game. Allowed only after the Seeker has started and before the endgame opens. The Hider messages RELOCATING with the time. For the next 20 minutes the Seeker cannot request hints. The Hider may move to a new zone anywhere in the play area, then messages ZONE COMMITTED and takes a new pin screenshot. The Hider never answers a hint while in a moving vehicle.
+- What Relocate means for the Seeker. Hints already answered are not refunded. They described the old zone and may now be wrong, and the Seeker knows this because the Relocate was announced. Hints requested after the blackout describe the new zone.
 - Honesty. Every answer is true for where the Hider stands at the moment of the request. Photos are taken at that moment, unedited, and must show the street.
 - What the Hider learns. The Seeker's challenge proof photos go to the Hider, so the Hider will roughly know where the Seeker is. That is deliberate. It is the Hider's only information and it drives the Relocate decision.
 
@@ -39,7 +40,7 @@ After each challenge the Seeker picks any unused hint from this menu. Six hints 
 - A. Closer to Richmond Circle or to Jayanagar 4th Block bus stand?
 - B. Closer to MG Road metro station or to Sony World signal, Koramangala?
 - C. Within 500 m of a metro station? Yes or no.
-- D. Within 300 m of a park, lake or playground? Yes or no.
+- D. Which metro station is nearest to you, by name? (Straight-line distance, any line.)
 - E. Photo looking down the road from where you stand, one direction, road included.
 - F. Photo of the nearest shop sign or building name that is readable.
 - G. Which neighbourhood from the play-area list are you in?
@@ -47,7 +48,14 @@ After each challenge the Seeker picks any unused hint from this menu. Six hints 
 
 ## Endgame
 
-Once the Seeker has used all six hints, or 3 hours have passed since the Seeker started, whichever is first, the Seeker may ask "Am I within 500 m of you?" once every 10 minutes. The Hider answers yes or no.
+Once the Seeker has used all six hints, or 3 hours have passed since the Seeker started, whichever is first, the Seeker may ask "Am I within 500 m of you?" once every 10 minutes.
+
+How the ask works:
+
+1. The Seeker sends a one-time location pin in WhatsApp (attach, location, send your current location). Not live location, and not an area name. The pin is the point the question is about.
+2. The Hider opens the pin in Google Maps, long-presses their own position, uses Measure distance to the pin, and answers YES if the straight-line distance is 500 m or less, otherwise NO. Answer within 5 minutes.
+3. The Seeker may keep moving while waiting. The answer refers to the pin, not to where the Seeker is when the answer arrives.
+4. The Hider may not move to a different part of the zone to change the answer between receiving the pin and answering.
 
 ## Winning
 
