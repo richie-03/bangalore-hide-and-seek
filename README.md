@@ -4,6 +4,7 @@ A two-player, Jet Lag style hide and seek game played across central and south B
 
 - Rules: [RULES.md](RULES.md)
 - Game board: https://richie-03.github.io/bangalore-hide-and-seek/
+- Redesign in development (same rules, new look, separate saved state): https://richie-03.github.io/bangalore-hide-and-seek/next/
 
 The game board is a single static page. It keeps timers, the challenge list, the hint menu and an event log in the browser's local storage, so each player's phone holds its own copy. The WhatsApp chat remains the official record for timestamps and photos.
 
