@@ -42,3 +42,7 @@ Open questions: whether the Hider earns anything for answering (cards, time bonu
 - Shared state between phones so the chat is no longer the record of truth.
 - A map view of the play area with the eliminated regions shaded.
 - A rules editor or presets so a game can be configured before the start.
+
+## Remote variant (idea only, not started)
+
+Same concept without leaving the house: the Hider picks a hiding zone on the map, the Seeker works only from information available online (street view, transit maps, satellite imagery, opening hours, photos the Hider takes from public sources). Hints, endgame ask and timers stay the same; challenges would need online equivalents. Worth a brainstorm after the redesign ships. Open questions: what stops the Seeker from just scanning the whole play area, and what the Hider does during the game.
