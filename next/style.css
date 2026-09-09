@@ -147,7 +147,7 @@ details.more[open] summary::before { content: '- '; }
 details.more .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
 
 /* Test banner */
-.banner { margin: 0 16px; padding: 12px 14px; border-radius: var(--radius); background: var(--yellow); color: var(--navy); display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 14px; }
+.banner { margin: 8px 16px 0; padding: 6px 12px; border-radius: 10px; background: var(--yellow); color: var(--navy); display: flex; align-items: center; justify-content: space-between; gap: 12px; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; }
 .banner a { color: var(--navy); }
 
 /* Placeholder for screens not built yet */
@@ -160,10 +160,14 @@ details.more .row { display: flex; gap: 10px; align-items: center; flex-wrap: wr
 .nav button { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); text-align: center; min-width: 72px; }
 .nav button.on { color: var(--yellow); }
 .nav button::before { content: ''; display: block; width: 22px; height: 22px; margin: 0 auto 4px; border-radius: 6px; background: currentColor; opacity: 0.8; }
-#shell .screen { padding-bottom: 170px; }
+#shell .screen { padding-bottom: 240px; }
 #shell .bottom { bottom: 64px; }
 .btn.small { width: auto; padding: 9px 14px; font-size: 13px; }
 .hero .big.words { font-size: 44px; }
+.hero.compact { padding-bottom: 0; }
+.hero.compact .big { font-size: 40px; }
+.hero.compact .big small { font-size: 20px; }
+.hero.compact .big.words { font-size: 30px; }
 
 /* Challenge route (transit line) */
 .line { position: relative; padding: 6px 0 2px 6px; }

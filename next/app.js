@@ -69,6 +69,9 @@
   var audioCtx = null;
   var screens = [];
   var activeId = null;
+  // Dev aid: ?screen=<id> opens that tab first (any mode; harmless if the id is unknown).
+  var screenMatch = /[?&]screen=([a-z]+)/.exec(location.search);
+  var requestedId = screenMatch ? screenMatch[1] : null;
 
   function load() {
     try { var raw = localStorage.getItem(KEY); if (raw) return Object.assign(fresh(), JSON.parse(raw)); } catch (e) {}
@@ -134,7 +137,7 @@
   }
 
   /* Shared hero markup so every screen shows time the same way. */
-  function heroHTML(d, now) {
+  function heroHTML(d, now, compact) {
     var label, big, note = '';
     if (d.phase === 'headstart') { label = 'Seeker starts in'; big = countdown(d.seekerStartAt - now); note = 'Hider moves freely. Seeker waits at Adugodi.'; }
     else if (d.phase === 'play' && d.inBlackout) { label = 'Blackout ends in'; big = countdown(d.blackoutUntil - now); note = 'Relocate in progress. No hints until ' + clock(d.blackoutUntil) + '.'; }
@@ -142,6 +145,7 @@
     else if (d.phase === 'timeout') { label = 'Hard stop passed'; big = 'Hider wins'; note = 'Time ran out at ' + clock(d.hardStopAt) + '.'; }
     else { label = 'Game over'; big = state.ended === 'seeker' ? 'Seeker wins' : 'Hider wins'; note = state.ended === 'seeker' ? 'Found. Photo is in the chat.' : 'Seeker conceded.'; }
     var bigClass = (d.phase === 'ended' || d.phase === 'timeout') ? 'big words' : 'big';
+    if (compact) return '<div class="hero compact"><div class="label">' + label + '</div><div class="' + bigClass + '">' + big + '</div></div>';
     return '<div class="hero"><div class="label">' + label + '</div><div class="' + bigClass + '">' + big + '</div>' +
       '<div class="pill-row" style="margin-top:10px">' +
       '<div class="pill"><b>Phase</b>' + d.phaseText + '</div>' +
@@ -223,7 +227,7 @@
     askHint: function (id) {
       var d = derived(Date.now()); var h = hint(id);
       if (!h || state.hints[id] || !d.canAskHint) return false;
-      if (!confirm('Ask hint ' + id + '? It will be marked used.')) return false;
+      if (!confirm('Ask hint ' + id + ': ' + h.q + '\n\nIt will be marked used.')) return false;
       var t = Date.now();
       state.hints[id] = t;
       log('Hint ' + id + ' asked: ' + h.q);
@@ -363,6 +367,7 @@
 
     var list = visibleScreens();
     if (!list.length) { $('screens').innerHTML = ''; return; }
+    if (requestedId && list.some(function (s) { return s.id === requestedId; })) { activeId = requestedId; requestedId = null; }
     if (!list.some(function (s) { return s.id === activeId; })) activeId = list[0].id;
     buildNav(list);
     screens.forEach(function (s) {

@@ -1,0 +1,36 @@
+/* Hider screen (Zone tab). Shared components live in style.css; only screen-specific bits here. */
+
+/* Incoming ask */
+.hd-ask-txt { min-width: 0; }
+.hd-ask .cd.late { color: var(--yellow); animation: hd-blink 1s steps(2, start) infinite; }
+@keyframes hd-blink { 50% { opacity: 0.35; } }
+.hd-answer { padding-top: 0; }
+.hd-answer .btn { margin-top: 8px; }
+
+/* Zone graphic */
+.hd-zone { text-align: center; padding: 0 16px; }
+.hd-zone svg.zone { margin: 6px auto 0; }
+.hd-cap { font-size: 22px; margin-top: -6px; }
+.hd-beam { transform: rotate(-38deg); transform-origin: 110px 100px; transform-box: view-box; }
+.hd-zone.live .hd-beam { animation: hd-sweep 9s linear infinite; }
+@keyframes hd-sweep { from { transform: rotate(-38deg); } to { transform: rotate(322deg); } }
+.hd-commit-sec { padding-top: 12px; }
+
+/* Hand */
+.hd-relocate .foot .play { color: var(--purple); }
+.hd-relocate.used::after { content: 'PLAYED'; color: var(--purple); }
+.hd-relocate:disabled:not(.used) { opacity: 0.6; }
+.hd-relocate:disabled:not(.used) .foot .play { color: var(--card-muted); }
+.hd-slot { background: transparent; border: 2px dashed rgba(255, 255, 255, 0.3); box-shadow: none; color: var(--muted); align-items: center; justify-content: center; text-align: center; font-size: 12px; padding: 14px; min-height: 190px; }
+
+/* Endgame ask */
+.hd-hot { flex-direction: column; align-items: stretch; }
+.hd-hot .yesno .btn { padding: 13px; }
+
+/* Mirror block */
+.hd-m-intro { margin-top: 4px; }
+.hd-sel { flex: 1; min-width: 0; font: inherit; font-size: 14px; padding: 9px 10px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); color-scheme: dark; }
+.hd-mirror .row .btn.small { flex: none; }
+
+/* Bottom */
+.hd-result { font-size: 22px; text-align: center; }

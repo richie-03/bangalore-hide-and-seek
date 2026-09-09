@@ -1,0 +1,42 @@
+/* Seeker board. Shared components live in style.css; only screen-specific bits here. */
+
+/* Challenge stops: keep the text block from swallowing the tag, show the full task under the next stop */
+.stop .txt { min-width: 0; }
+.stop .note.full { margin-top: 4px; color: #fff; opacity: 0.85; }
+.stop:disabled .dot { cursor: default; }
+.stop.next { align-items: flex-start; }
+.stop.next .txt { padding-top: 5px; }
+.stop.next .tag { padding-top: 12px; }
+
+/* Hint note states */
+.hint-note.hot { color: var(--yellow); font-weight: 600; }
+.hint-note.warn { color: #f0a0a0; font-weight: 600; }
+
+/* Small button inside an alert banner */
+.alert .alert-btn { margin-left: auto; flex: none; padding: 8px 12px; border-radius: 10px; background: var(--navy); color: #fff; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+.alert:not(.teal):not(.yellow) .alert-btn { background: #fff; color: var(--red); }
+.alert .cd + .alert-btn { margin-left: 0; }
+
+/* Reveal overlay: scroll when the phone is short, keep content centred otherwise */
+.reveal.seeker-reveal { justify-content: flex-start; overflow-y: auto; padding-bottom: 24px; }
+.reveal.seeker-reveal .reveal-inner { margin: auto; width: 100%; max-width: 360px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.reveal.seeker-reveal .reveal-label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.6px; color: var(--muted); text-align: center; }
+.reveal.seeker-reveal .card { margin-bottom: 10px; }
+.reveal.seeker-reveal .card .head { display: flex; justify-content: space-between; align-items: center; }
+.reveal.seeker-reveal .card .head .cat { font-size: 13px; }
+.reveal.seeker-reveal .card .head .hex { width: 44px; height: 50px; font-size: 20px; }
+.reveal.seeker-reveal .card .cat.dim { color: var(--card-muted); }
+.reveal.seeker-reveal .card .deadline .cd.late { font-size: 24px; }
+.reveal.seeker-reveal .field { width: 100%; }
+.reveal.seeker-reveal .field input[type="text"] { font-size: 17px; }
+.reveal.seeker-reveal .btn { margin-top: 0; }
+.reveal.seeker-reveal .note { text-align: center; font-size: 12px; }
+.reveal.seeker-reveal .linkbtn { padding: 6px 12px; }
+
+/* Bottom result note */
+.bottom .end-note { font-size: 14px; color: var(--ink); padding: 14px; border-radius: var(--radius); background: var(--surface); margin-top: 0; }
+
+/* Finish buttons side by side so they cover less of the board */
+#screen-seeker .bottom .inner { display: flex; flex-wrap: wrap; gap: 10px; }
+#screen-seeker .bottom .inner .btn { flex: 1 1 45%; margin-top: 0; padding: 14px 10px; font-size: 15px; }
+#screen-seeker .bottom .inner .end-note { flex: 1 1 100%; }
