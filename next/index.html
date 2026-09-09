@@ -6,6 +6,9 @@
 <meta name="theme-color" content="#202937">
 <title>Bangalore Hide + Seek</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="screens/seeker.css">
+<link rel="stylesheet" href="screens/hider.css">
+<link rel="stylesheet" href="screens/endgame.css">
 </head>
 <body>
 <div class="app">
@@ -15,7 +18,7 @@
   <!-- Title and setup -->
   <section class="screen" id="screenTitle">
     <div class="wordmark">
-      <div class="edition">Bangalore <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="#fff"/><polygon points="10,10 16,20 4,20" fill="#202937"/></svg> Edition</div>
+      <div class="edition">Bangalore <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="#fff"/><polygon class="wedge" points="10,10 16,20 4,20" fill="#202937"/></svg> Edition</div>
       <div class="name">Hide<span class="plus">+</span>Seek</div>
       <div class="rule"><span>a city game</span><span>find your friend</span></div>
     </div>
@@ -41,185 +44,49 @@
       <h2>Head start <span>locked once sent</span></h2>
       <div class="seg" id="headStart"></div>
       <details class="more">
-        <summary>Sync a second phone</summary>
+        <summary>Alerts, WhatsApp and syncing a second phone</summary>
         <div class="row">
-          <label for="leftAt" class="note">Hider left at</label>
-          <input type="time" id="leftAt">
-          <span class="note">Leave blank for "now".</span>
+          <button type="button" class="btn ghost small" id="btnAlerts">Enable alerts</button>
+          <span class="note" id="alertNote"></span>
         </div>
         <div class="row">
           <label class="chk"><input type="checkbox" id="waToggle"> Open WhatsApp with a ready message after each action</label>
         </div>
+        <div class="row">
+          <label for="leftAt" class="note">Hider left at</label>
+          <input type="time" id="leftAt">
+          <span class="note">Leave blank for "now". Fill it in to sync a second phone.</span>
+        </div>
+        <div class="note" style="margin-top:8px">Alerts fire for: Seeker start, blackout end, endgame open, 15 minutes before hard stop, hard stop. They only work while this page is open. Set phone alarms as a backup. On iPhone, add this page to the home screen first.</div>
       </details>
     </div>
 
     <div class="bottom"><div class="inner">
       <button class="btn" id="btnLeave">Hider leaves now</button>
+      <button class="btn ghost" id="btnBackToBoard" hidden>Back to the board</button>
       <div class="note">Press at the moment the Hider walks out the door. Sends the head start to WhatsApp at the same time.</div>
     </div></div>
   </section>
 
-  <!-- Board (in progress: only the hero and phase are wired so the flow can be tested) -->
-  <section class="screen" id="screenBoard" hidden>
+  <!-- Board shell: screens register into #screens, nav is built from them -->
+  <div id="shell" hidden>
     <div class="topbar">
-      <div class="brand"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="#fff"/><polygon points="10,10 16,20 4,20" fill="#202937"/></svg>Hide<span class="plus">+</span>Seek</div>
-      <span class="chip" id="roleChip">Seeker</span>
+      <button type="button" class="brand" id="btnTitle" title="Title and settings"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="#fff"/><polygon class="wedge" points="10,10 16,20 4,20" fill="#202937"/></svg>Hide<span class="plus">+</span>Seek</button>
+      <span style="display:flex;gap:6px;align-items:center">
+        <button type="button" class="chip ghost" id="alertChip" hidden>Enable alerts</button>
+        <span class="chip" id="roleChip">Seeker</span>
+      </span>
     </div>
-    <div class="hero">
-      <div class="label" id="heroLabel">Seeker starts in</div>
-      <div class="big" id="heroBig">--:--</div>
-      <div class="pill-row" style="margin-top:10px">
-        <div class="pill"><b>Phase</b><span id="phase">Head start</span></div>
-        <div class="pill"><b>Seeker starts</b><span id="seekerStart">--:--</span></div>
-        <div class="pill"><b>Hard stop</b><span id="hardStop">--:--</span></div>
-      </div>
-      <div class="note" id="phaseNote" style="margin-top:10px"></div>
-    </div>
-    <div class="todo">Challenges, investigation book, Hider view, endgame and record come next.</div>
-    <div class="bottom"><div class="inner">
-      <button class="btn ghost" id="btnBack">Back to title</button>
-      <div class="note"><button type="button" class="linkbtn danger" id="btnReset">Reset game</button></div>
-    </div></div>
-  </section>
+    <div id="screens"></div>
+    <nav class="nav" id="nav"></nav>
+  </div>
 
 </div>
 
-<script>
-(function () {
-  'use strict';
-  var TEST = /[?&]test=1/.test(location.search);
-  var KEY = TEST ? 'bhs-state-v2-test' : 'bhs-state-v2';
-  var MIN = TEST ? 1000 : 60000;
-  var HARD_STOP_MS = 5 * 60 * MIN;
-  var ENDGAME_MS = 3 * 60 * MIN;
-
-  function fresh() {
-    return { role: null, headStart: 40, hiderLeftAt: null, relocateAt: null, zones: [], challenges: [false, false, false, false, false, false], hints: {}, hotCold: [], ended: null, fired: {}, wa: true, log: [] };
-  }
-  var state = load();
-  var titleOverride = false;
-
-  function load() {
-    try { var raw = localStorage.getItem(KEY); if (raw) return Object.assign(fresh(), JSON.parse(raw)); } catch (e) {}
-    return fresh();
-  }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
-  function log(msg) { state.log.unshift({ t: Date.now(), m: msg }); save(); }
-  function $(id) { return document.getElementById(id); }
-  function pad(n) { return (n < 10 ? '0' : '') + n; }
-  function clock(ts) { var x = new Date(ts); return pad(x.getHours()) + ':' + pad(x.getMinutes()) + (TEST ? ':' + pad(x.getSeconds()) : ''); }
-  function countdown(ms) {
-    if (ms < 0) ms = 0;
-    var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
-    return h > 0 ? h + ':' + pad(m) + '<small>:' + pad(r) + '</small>' : pad(m) + '<small>:' + pad(r) + '</small>';
-  }
-  function toChat(text) {
-    if (!state.wa) return;
-    try { window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank'); } catch (e) {}
-  }
-
-  function derived(now) {
-    var d = {};
-    d.seekerStartAt = state.hiderLeftAt ? state.hiderLeftAt + state.headStart * MIN : null;
-    d.hardStopAt = d.seekerStartAt ? d.seekerStartAt + HARD_STOP_MS : null;
-    d.endgameAt = d.seekerStartAt ? d.seekerStartAt + ENDGAME_MS : null;
-    if (state.ended) d.phase = 'ended';
-    else if (!state.hiderLeftAt) d.phase = 'setup';
-    else if (now < d.seekerStartAt) d.phase = 'headstart';
-    else if (now >= d.hardStopAt) d.phase = 'timeout';
-    else d.phase = 'play';
-    return d;
-  }
-
-  function setRole(role) {
-    state.role = role; save();
-    document.body.classList.toggle('hider', role === 'hider');
-    var wedge = role === 'hider' ? '#453366' : '#202937';
-    Array.prototype.forEach.call(document.querySelectorAll('.wedge'), function (el) { el.setAttribute('fill', wedge); });
-    Array.prototype.forEach.call(document.querySelectorAll('#roles button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.role === role)); });
-    $('roleChip').textContent = role === 'hider' ? 'Hider' : 'Seeker';
-  }
-
-  function render() {
-    var now = Date.now();
-    var d = derived(now);
-    var onBoard = d.phase !== 'setup' && !titleOverride;
-    $('screenTitle').hidden = onBoard;
-    $('screenBoard').hidden = !onBoard;
-    if (!onBoard) return;
-
-    var phaseText = { headstart: 'Head start', play: 'Seeking', timeout: 'Time is up, Hider wins', ended: 'Ended' }[d.phase];
-    $('phase').textContent = phaseText;
-    $('seekerStart').textContent = clock(d.seekerStartAt);
-    $('hardStop').textContent = clock(d.hardStopAt);
-    if (d.phase === 'headstart') {
-      $('heroLabel').textContent = 'Seeker starts in';
-      $('heroBig').innerHTML = countdown(d.seekerStartAt - now);
-      $('phaseNote').textContent = 'Hider moves freely. Seeker waits at Adugodi.';
-    } else if (d.phase === 'play') {
-      $('heroLabel').textContent = 'Hard stop in';
-      $('heroBig').innerHTML = countdown(d.hardStopAt - now);
-      $('phaseNote').textContent = 'Endgame opens at ' + clock(d.endgameAt) + ' or after six hints.';
-    } else {
-      $('heroLabel').textContent = 'Game over';
-      $('heroBig').innerHTML = '0:00';
-      $('phaseNote').textContent = '';
-    }
-  }
-
-  // Head start segmented control
-  var seg = $('headStart');
-  for (var m = 30; m <= 45; m += 5) {
-    var b = document.createElement('button'); b.type = 'button'; b.dataset.min = m;
-    b.textContent = m + (TEST ? ' s' : ' min');
-    b.addEventListener('click', function () { state.headStart = parseInt(this.dataset.min, 10); save(); syncSeg(); });
-    seg.appendChild(b);
-  }
-  function syncSeg() {
-    Array.prototype.forEach.call(seg.children, function (b) { b.setAttribute('aria-pressed', String(parseInt(b.dataset.min, 10) === state.headStart)); });
-  }
-
-  Array.prototype.forEach.call(document.querySelectorAll('#roles button'), function (b) {
-    b.addEventListener('click', function () { setRole(this.dataset.role); });
-  });
-
-  $('waToggle').checked = state.wa;
-  $('waToggle').addEventListener('change', function () { state.wa = $('waToggle').checked; save(); });
-
-  $('btnLeave').addEventListener('click', function () {
-    if (!state.role) { alert('Pick Hider or Seeker first.'); return; }
-    var t = Date.now();
-    var manual = $('leftAt').value;
-    if (manual && !TEST) {
-      var p = manual.split(':'); var x = new Date(); x.setHours(parseInt(p[0], 10), parseInt(p[1], 10), 0, 0); t = x.getTime();
-      if (t > Date.now()) { alert('That time is in the future. Use the time the Hider actually left.'); return; }
-    }
-    if (!confirm('Start the clock with a ' + state.headStart + (TEST ? ' second' : ' minute') + ' head start' + (manual && !TEST ? ' from ' + manual : ' from now') + '?')) return;
-    state.hiderLeftAt = t; titleOverride = false;
-    var ss = t + state.headStart * MIN;
-    log('Hider left at ' + clock(t) + '. Head start ' + state.headStart + '. Seeker starts at ' + clock(ss) + '.');
-    toChat('Hider leaving at ' + clock(t) + '. Head start ' + state.headStart + ' min. Seeker starts at ' + clock(ss) + '. Hard stop ' + clock(ss + HARD_STOP_MS) + '.');
-    render();
-  });
-
-  $('btnBack').addEventListener('click', function () {
-    // Keeps the game running; only shows the title screen again for role or settings changes.
-    titleOverride = true; render();
-    $('btnLeave').disabled = true; $('btnLeave').textContent = 'Clock is running';
-  });
-  $('btnReset').addEventListener('click', function () {
-    if (!confirm('Reset the whole game on this phone?')) return;
-    var role = state.role; state = fresh(); state.role = role; save(); titleOverride = false;
-    $('btnLeave').disabled = false; $('btnLeave').textContent = 'Hider leaves now';
-    render();
-  });
-
-  if (TEST) $('testBanner').hidden = false;
-  if (state.role) setRole(state.role);
-  syncSeg();
-  render();
-  setInterval(render, 1000);
-})();
-</script>
+<script src="app.js"></script>
+<script src="screens/seeker.js"></script>
+<script src="screens/hider.js"></script>
+<script src="screens/endgame.js"></script>
+<script src="screens/record.js"></script>
 </body>
 </html>
