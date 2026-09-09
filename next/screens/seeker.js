@@ -144,9 +144,9 @@
     /* Bottom actions */
     var bottom = el('div', 'bottom');
     var inner = el('div', 'inner');
-    ui.btnFound = btn('btn', 'Seeker found the Hider');
+    ui.btnFound = btn('btn', 'Found the Hider');
     ui.btnFound.addEventListener('click', function () { BHS.actions.found(); });
-    ui.btnConcede = btn('btn ghost', 'Seeker concedes');
+    ui.btnConcede = btn('btn ghost', 'Concede');
     ui.btnConcede.addEventListener('click', function () { BHS.actions.concede(); });
     ui.endNote = el('div', 'note end-note');
     ui.endNote.hidden = true;
